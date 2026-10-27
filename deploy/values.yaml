@@ -1,0 +1,35 @@
+# Values for shopwise-platform/charts/laravel-service. `name` and `image` are set by the Tiltfile.
+http:
+  workers: 1
+consumers:
+  # Feeds the SKU list (stock_levels rows); stock can only be set for SKUs catalog announced.
+  - name: catalog-skus
+    topics: [catalog.variant-changed]
+  # Checkout's saga commands. A consumer of its own, so catalog traffic never delays a reservation.
+  - name: checkout-commands
+    topics: [inventory.reserve-stock, inventory.commit-reservation, inventory.release-reservation]
+scheduler:
+  # Runs the outbox relay and inventory:expire-reservations (every minute).
+  enabled: true
+# Topics this service owns: its events (only producer) and, per ADR-0004, the command topics it receives.
+topics:
+  - name: inventory.stock-reserved
+    partitions: 3
+  - name: inventory.reservation-failed
+    partitions: 3
+  - name: inventory.reservation-committed
+    partitions: 3
+  - name: inventory.reservation-released
+    partitions: 3
+  - name: inventory.stock-level-changed
+    partitions: 3
+  - name: inventory.reserve-stock
+    partitions: 3
+  - name: inventory.commit-reservation
+    partitions: 3
+  - name: inventory.release-reservation
+    partitions: 3
+env:
+  LOG_CHANNEL: stderr
+  OCTANE_SERVER: frankenphp
+  INVENTORY_RESERVATION_TTL_MINUTES: "15"
